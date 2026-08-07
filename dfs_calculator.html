@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DFS Calculator</title>
+  <style>
+    :root {
+      --bg: #fbfbfd;
+      --panel: #ffffff;
+      --panel-soft: #f5f5f8;
+      --ink: #1f2430;
+      --muted: #5e6676;
+      --line: #d7d8df;
+      --accent: #4a63bf;
+      --accent-soft: rgba(74, 99, 191, 0.16);
+      --accent-fill: rgba(74, 99, 191, 0.16);
+      --alert: #d97a6d;
+      --low: #2c9c6a;
+      --mid: #c49a2d;
+      --high: #c74d4d;
+      --radius: 4px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+    }
+
+    .page {
+      max-width: 1480px;
+      margin: 0 auto;
+      padding: 16px 18px 28px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 38px;
+      font-weight: 500;
+      line-height: 1.15;
+    }
+
+    .subtitle {
+      margin: 0 0 20px;
+      color: var(--muted);
+      font-size: 16px;
+      line-height: 1.65;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 385px minmax(0, 1fr);
+      gap: 20px;
+      align-items: start;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: none;
+    }
+
+    .controls {
+      padding: 20px;
+      position: sticky;
+      top: 20px;
+      background: var(--panel-soft);
+    }
+
+    .controls h2,
+    .result-title {
+      margin: 0 0 18px;
+      font-size: 28px;
+      font-weight: 500;
+      line-height: 1.15;
+    }
+
+    .section-label {
+      margin: 18px 0 12px;
+      color: var(--accent);
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .field {
+      margin-bottom: 14px;
+    }
+
+    .field label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 15px;
+      font-weight: 400;
+      color: var(--ink);
+    }
+
+    .field small {
+      display: block;
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.45;
+    }
+
+    select,
+    input {
+      width: 100%;
+      height: 46px;
+      border: 1px solid #cfd2da;
+      border-radius: 4px;
+      padding: 0 14px;
+      font-size: 15px;
+      font-weight: 400;
+      color: var(--ink);
+      background: #ffffff;
+      box-shadow: none;
+    }
+
+    select:focus,
+    input:focus,
+    button:focus {
+      outline: 3px solid var(--accent-soft);
+      border-color: var(--accent);
+    }
+
+    .button-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    button {
+      min-width: 92px;
+      height: 42px;
+      border: 1px solid #c3c7d2;
+      border-radius: 4px;
+      background: #ffffff;
+      color: var(--ink);
+      font-size: 14px;
+      cursor: pointer;
+      box-shadow: none;
+    }
+
+    .helper-box {
+      margin-top: 18px;
+      padding-top: 16px;
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .helper-box strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--ink);
+      font-size: 14px;
+    }
+
+    .results {
+      padding: 20px;
+    }
+
+    .results-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+
+    .results-copy {
+      margin: -2px 0 0;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.55;
+    }
+
+    .tools-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .copy-btn {
+      min-width: 174px;
+      background: var(--panel-soft);
+    }
+
+    .risk-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 166px;
+      height: 38px;
+      padding: 0 16px;
+      border-radius: 999px;
+      font-size: 14px;
+      font-weight: 700;
+      border: 1px solid transparent;
+    }
+
+    .risk-low {
+      background: rgba(44, 156, 106, 0.12);
+      color: #216947;
+    }
+
+    .risk-mid {
+      background: rgba(196, 154, 45, 0.18);
+      color: #7d5d05;
+    }
+
+    .risk-high {
+      background: rgba(199, 77, 77, 0.12);
+      color: #8c2d2d;
+    }
+
+    .metric-strip {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .metric-box {
+      border: 1px solid var(--line);
+      background: var(--panel-soft);
+      padding: 12px 16px;
+      min-height: 84px;
+    }
+
+    .metric-box-label {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+
+    .metric-box-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #18233b;
+    }
+
+    .plot-card {
+      border: 1px solid var(--line);
+      padding: 10px 12px 12px;
+      margin-bottom: 16px;
+    }
+
+    #plot {
+      width: 100%;
+      height: auto;
+      display: block;
+      background: #fff;
+    }
+
+    .table-card {
+      border: 1px solid var(--line);
+      margin-bottom: 16px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      padding: 12px 14px;
+      border-bottom: 1px solid #e4e5ea;
+      border-right: 1px solid #e4e5ea;
+      text-align: center;
+      font-size: 14px;
+    }
+
+    th:last-child,
+    td:last-child {
+      border-right: none;
+    }
+
+    th {
+      background: #f4f4f6;
+      font-weight: 700;
+      color: #222222;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .table-note {
+      margin: 12px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .indices-section {
+      border: 1px solid var(--line);
+      padding: 18px 16px 16px;
+    }
+
+    .indices-title {
+      margin: 0 0 14px;
+      font-size: 22px;
+      font-weight: 500;
+    }
+
+    .indices-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .index-card {
+      border: 1px solid var(--line);
+      background: #fafafa;
+      padding: 14px 16px;
+      min-height: 98px;
+    }
+
+    .index-label {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 16px;
+    }
+
+    .index-value {
+      font-size: 18px;
+      font-weight: 700;
+      color: #16213a;
+      line-height: 1.35;
+      white-space: pre-wrap;
+    }
+
+    .footer-note {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 1120px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .controls {
+        position: static;
+      }
+
+      .results-top {
+        flex-direction: column;
+      }
+
+      .indices-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 760px) {
+      .page {
+        padding: 18px 14px 28px;
+      }
+
+      h1 {
+        font-size: 30px;
+      }
+
+      .controls,
+      .results {
+        padding: 16px;
+      }
+
+      .metric-strip,
+      .indices-grid {
+        grid-template-columns: 1fr;
+      }
+
+      th,
+      td {
+        padding: 10px 8px;
+        font-size: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <h1 id="page-title"></h1>
+    <p class="subtitle" id="page-subtitle"></p>
+
+    <div class="layout">
+      <section class="card controls">
+        <h2>Input Variables</h2>
+
+        <div class="section-label">Clinicopathological Variables</div>
+
+        <div class="field">
+          <label for="ypn_stage">ypN stage (code)</label>
+          <select id="ypn_stage">
+            <option value="0">N0 (code 0)</option>
+            <option value="1">N1 (code 1)</option>
+            <option value="2">N2 (code 2)</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="mpr">MPR</label>
+          <select id="mpr">
+            <option value="0">No MPR (code 0)</option>
+            <option value="1">MPR (code 1)</option>
+          </select>
+        </div>
+
+        <div class="section-label">Preoperative Hematologic Variables</div>
+
+        <div class="field">
+          <label for="lymphocyte">Lymphocyte count (x10^9/L)</label>
+          <input id="lymphocyte" type="number" inputmode="decimal" step="0.01">
+          <small id="lymphocyte-range"></small>
+        </div>
+
+        <div class="field">
+          <label for="monocyte">Monocyte count (x10^9/L)</label>
+          <input id="monocyte" type="number" inputmode="decimal" step="0.01">
+          <small id="monocyte-range"></small>
+        </div>
+
+        <div class="field">
+          <label for="platelet">Platelet count (x10^9/L)</label>
+          <input id="platelet" type="number" inputmode="decimal" step="1">
+          <small id="platelet-range"></small>
+        </div>
+
+        <div class="field">
+          <label for="albumin">Albumin (g/L)</label>
+          <input id="albumin" type="number" inputmode="decimal" step="0.1">
+          <small id="albumin-range"></small>
+        </div>
+
+        <div class="button-row">
+          <button id="predict-btn" type="button">Predict</button>
+          <button id="reset-btn" type="button">Reset</button>
+        </div>
+
+        <div class="helper-box">
+          <strong>Calculated indices</strong>
+          <div>LMR = lymphocyte count / monocyte count</div>
+          <div>PAR = platelet count / albumin</div>
+          <div>The model automatically derives LMR and PAR from the blood test inputs above.</div>
+        </div>
+      </section>
+
+      <section class="card results">
+        <div class="results-top">
+          <div>
+            <div class="result-title">Estimated DFS Probability</div>
+            <p class="results-copy">Predicted survival curve and point estimates at 12, 36, and 60 months</p>
+          </div>
+          <div class="tools-row">
+            <button class="copy-btn" id="copy-btn" type="button">Copy Result Summary</button>
+            <div id="risk-badge" class="risk-badge risk-mid">Intermediate Risk</div>
+          </div>
+        </div>
+
+        <div class="metric-strip">
+          <div class="metric-box">
+            <div class="metric-box-label">Linear predictor</div>
+            <div class="metric-box-value" id="lp-value">-</div>
+          </div>
+          <div class="metric-box">
+            <div class="metric-box-label">Relative risk</div>
+            <div class="metric-box-value" id="hr-value">-</div>
+          </div>
+        </div>
+
+        <div class="plot-card">
+          <svg id="plot" viewBox="0 0 980 520" preserveAspectRatio="xMidYMid meet" aria-label="DFS plot"></svg>
+        </div>
+
+        <div class="table-card">
+          <table>
+            <thead>
+              <tr>
+                <th>Time points</th>
+                <th>Survival probability</th>
+                <th>Lower bound</th>
+                <th>Upper bound</th>
+              </tr>
+            </thead>
+            <tbody id="summary-body"></tbody>
+          </table>
+        </div>
+
+        <p class="table-note">
+          The dashed vertical lines indicate forecasts at the 12-, 36-, and 60-month time points.<br>
+          The shaded band is a display interval for visualization only and does not replace formal confidence interval estimation.
+        </p>
+
+        <div class="indices-section">
+          <div class="indices-title">Calculated Indices</div>
+          <div class="indices-grid">
+            <div class="index-card">
+              <div class="index-label">LMR</div>
+              <div class="index-value" id="lmr-card">-</div>
+            </div>
+            <div class="index-card">
+              <div class="index-label">PAR</div>
+              <div class="index-value" id="par-card">-</div>
+            </div>
+            <div class="index-card">
+              <div class="index-label">ypN stage</div>
+              <div class="index-value" id="nstage-card">-</div>
+            </div>
+            <div class="index-card">
+              <div class="index-label">MPR</div>
+              <div class="index-value" id="mpr-card">-</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="footer-note" id="footer-note"></div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const MODEL = {"title": "Disease-Free Survival Probability Calculator", "subtitle": "Final Cox model: MPR + ypN stage + LMR + PAR", "time_points": [12, 36, 60], "plot_max_time": 60.0, "coefficient_order": ["mpr_1", "ypn_1", "ypn_2", "LMR", "PAR"], "coefficients": {"mpr_1": -0.7277055311109929, "ypn_1": 0.6314275122142486, "ypn_2": 1.124599951337311, "LMR": -0.20397179919854555, "PAR": 0.17279864882730353}, "covariance_matrix": [[0.09795895342613187, 0.018056557996504182, 0.03262943099322666, -0.002259085659897035, 0.0011411903430349278], [0.018056557996504196, 0.12344565914136701, 0.0344308812260734, 0.0009902313539870379, -0.00021989807606344623], [0.03262943099322668, 0.03443088122607339, 0.06403074837788313, -0.001405820826134031, 0.000665655119828289], [-0.002259085659897037, 0.0009902313539870379, -0.0014058208261340315, 0.004932700080280861, -0.0002546833217943705], [0.0011411903430349278, -0.00021989807606344707, 0.0006656551198282886, -0.0002546833217943705, 0.004237301123566534]], "center_vector": [0.3686635944700461, 0.09216589861751152, 0.2764976958525346, 4.112402230603687, 5.5219217064562205], "centering_offset": 0.2162333703620195, "baseline_times": [1.084099869, 1.41261498, 1.773981603, 1.806833114, 2.23390276, 2.660972405, 2.792378449, 2.956636005, 3.08804205, 3.318002628, 3.975032852, 5.05913272, 5.420499343, 5.519053876, 5.584756899, 5.716162943, 5.814717477, 5.847568988, 5.913272011, 6.044678055, 7.03022339, 7.063074901, 7.227332457, 8.114323259, 8.377135348, 8.70565046, 9.231274639, 9.526938239, 9.691195795, 10.64388962, 10.67674113, 10.80814717, 11.33377135, 11.59658344, 11.69513798, 11.72798949, 11.89224704, 12.02365309, 12.18791064, 12.3521682, 12.71353482, 12.84494087, 12.87779238, 13.10775296, 13.17345598, 13.96189225, 14.84888305, 15.67017083, 16.42575558, 16.72141919, 16.95137976, 17.01708279, 17.24704336, 19.18528252, 21.71484888, 21.74770039, 22.01051248, 22.07621551, 22.99605782, 23.06176084, 23.2260184, 23.32457293, 23.521682, 24.34296978, 24.4086728, 24.60578187, 24.63863338, 24.93429698, 25.26281209, 25.42706965, 25.55847569, 25.62417871, 26.14980289, 26.41261498, 26.51116951, 26.54402102, 26.80683311, 27.00394218, 27.13534823, 27.39816032, 27.49671485, 27.6609724, 27.69382392, 28.28515112, 28.54796321, 28.58081472, 29.17214192, 29.53350854, 29.73061761, 30.02628121, 30.19053876, 31.04467806, 31.07752957, 31.43889619, 31.66885677, 31.86596583, 31.96452037, 32.32588699, 33.31143233, 33.50854139, 33.80420499, 33.93561104, 33.96846255, 34.09986859, 34.23127464, 34.72404731, 35.61103811, 35.74244415, 36.99080158, 37.15505913, 37.25361367, 37.45072273, 37.9434954, 38.20630749, 38.37056505, 38.60052562, 38.63337714, 38.96189225, 39.48751643, 39.84888305, 39.88173456, 40.47306176, 40.50591327, 40.53876478, 41.06438896, 41.29434954, 41.32720105, 41.36005256, 41.72141919, 41.85282523, 42.0499343, 42.18134034, 42.27989488, 42.41130092, 43.13403417, 43.42969777, 43.8239159, 43.98817346, 44.31668857, 45.3022339, 45.63074901, 45.95926413, 46.09067017, 46.12352168, 46.15637319, 46.45203679, 46.91195795, 47.01051248, 47.3390276, 47.47043364, 47.50328515, 47.56898817, 49.44152431, 49.54007884, 49.60578187, 49.63863338, 50.91984231, 51.08409987, 51.14980289, 51.41261498, 51.478318, 52.16819974, 52.62812089, 52.69382392, 53.38370565, 54.04073587, 56.30749014, 56.34034166, 57.12877792, 57.42444152, 57.91721419, 58.5413929, 58.8370565, 60.0], "baseline_survival": [1.0, 1.0, 1.0, 0.9968958932702778, 0.9937611934639311, 0.9905990715933742, 0.987432088864226, 0.9842271108985463, 0.9810127216575658, 0.977737756926669, 0.9744644070482888, 0.9711493836549469, 0.9677960957290352, 0.9644476831712812, 0.9610707399599, 0.9543152091342831, 0.9509268013694754, 0.9475135782522379, 0.9475135782522379, 0.9440469120977443, 0.9405868129246431, 0.9370856215088205, 0.9370856215088205, 0.9335515087392886, 0.9300157299298483, 0.9264671394633833, 0.9229245220351052, 0.9193727886374687, 0.9157837310764618, 0.9121979028940398, 0.9086218187983851, 0.905035552169328, 0.9014506792051257, 0.8978600012189432, 0.8942232881422987, 0.89056146989375, 0.886882995764569, 0.8757347488657342, 0.8719263823988588, 0.8681290017384141, 0.8643159023257901, 0.8604957550089841, 0.8566687998381963, 0.8527690675657704, 0.8487771957171368, 0.8447279403646022, 0.8406764963745729, 0.8365101153074816, 0.8322611824862978, 0.8280109036005738, 0.82371964744505, 0.8193937231293523, 0.8150643014424522, 0.8107017537992447, 0.8063500055822609, 0.8019639248686689, 0.797564774673001, 0.797564774673001, 0.7930962117241692, 0.7885588455557591, 0.7885588455557591, 0.7885588455557591, 0.7839378443713366, 0.7839378443713366, 0.7793144326948962, 0.7746976306368536, 0.7700675472012953, 0.7654014923071452, 0.760673813747083, 0.760673813747083, 0.7559433480451025, 0.7559433480451025, 0.7559433480451025, 0.7559433480451025, 0.7509877214755863, 0.7509877214755863, 0.7458849968072523, 0.7407747481148356, 0.7407747481148356, 0.7355447690328727, 0.7355447690328727, 0.7355447690328727, 0.7355447690328727, 0.7355447690328727, 0.7355447690328727, 0.7302028757450707, 0.7302028757450707, 0.7302028757450707, 0.7302028757450707, 0.7302028757450707, 0.7302028757450707, 0.7302028757450707, 0.72467268174325, 0.7136269637125205, 0.7136269637125205, 0.7136269637125205, 0.7136269637125205, 0.7080484219954774, 0.7024371042011555, 0.6967598507365416, 0.6967598507365416, 0.6967598507365416, 0.690724877369559, 0.6847110912895321, 0.6787183200322002, 0.672762385104693, 0.672762385104693, 0.672762385104693, 0.672762385104693, 0.672762385104693, 0.672762385104693, 0.672762385104693, 0.6664447439798731, 0.6664447439798731, 0.6599647351923277, 0.6599647351923277, 0.6599647351923277, 0.6530577729322146, 0.6530577729322146, 0.6461451403906956, 0.6461451403906956, 0.6461451403906956, 0.6461451403906956, 0.6391842574258082, 0.6391842574258082, 0.6391842574258082, 0.6317994369543246, 0.6317994369543246, 0.6317994369543246, 0.6317994369543246, 0.6317994369543246, 0.6317994369543246, 0.6317994369543246, 0.6317994369543246, 0.6317994369543246, 0.6317994369543246, 0.6317994369543246, 0.6317994369543246, 0.6317994369543246, 0.6317994369543246, 0.6317994369543246, 0.6317994369543246, 0.622829010654754, 0.622829010654754, 0.622829010654754, 0.622829010654754, 0.622829010654754, 0.622829010654754, 0.622829010654754, 0.622829010654754, 0.622829010654754, 0.622829010654754, 0.622829010654754, 0.622829010654754, 0.622829010654754, 0.622829010654754, 0.622829010654754, 0.6113460836136569, 0.6113460836136569, 0.6113460836136569, 0.6113460836136569, 0.6113460836136569, 0.6113460836136569, 0.5987869197174073, 0.5987869197174073, 0.5987869197174073, 0.5987869197174073, 0.5987869197174073, 0.5987869197174073, 0.5987869197174073, 0.5987869197174073, 0.5987869197174073, 0.5987869197174073, 0.5987869197174073], "z_975": 1.959963984540054, "sample_size": 217, "event_count": 90, "defaults": {"mpr": 0, "ypn_stage": 0, "lymphocyte": 1.72, "monocyte": 0.47, "platelet": 228.0, "albumin": 43.4}, "ranges": {"lymphocyte": {"min": 0.31, "max": 4.8}, "monocyte": {"min": 0.14, "max": 3.5}, "platelet": {"min": 35.0, "max": 485.0}, "albumin": {"min": 29.0, "max": 51.8}}, "risk_cutoffs": {"low_mid": -0.5935199522375129, "mid_high": 0.49003097638370624}};
+
+    function clamp01(value) {
+      return Math.min(Math.max(value, 1e-10), 0.9999999999);
+    }
+
+    function formatNumber(value, digits = 3) {
+      return Number(value).toFixed(digits);
+    }
+
+    function formatPercent(value, digits = 1) {
+      return `${(value * 100).toFixed(digits)}%`;
+    }
+
+    function getInputs() {
+      return {
+        mpr: Number(document.getElementById("mpr").value),
+        ypn_stage: Number(document.getElementById("ypn_stage").value),
+        lymphocyte: Number(document.getElementById("lymphocyte").value),
+        monocyte: Number(document.getElementById("monocyte").value),
+        platelet: Number(document.getElementById("platelet").value),
+        albumin: Number(document.getElementById("albumin").value)
+      };
+    }
+
+    function setDefaults() {
+      document.getElementById("mpr").value = String(MODEL.defaults.mpr);
+      document.getElementById("ypn_stage").value = String(MODEL.defaults.ypn_stage);
+      document.getElementById("lymphocyte").value = formatNumber(MODEL.defaults.lymphocyte, 2);
+      document.getElementById("monocyte").value = formatNumber(MODEL.defaults.monocyte, 2);
+      document.getElementById("platelet").value = formatNumber(MODEL.defaults.platelet, 0);
+      document.getElementById("albumin").value = formatNumber(MODEL.defaults.albumin, 1);
+    }
+
+    function calculateIndices(inputs) {
+      const lmr = inputs.lymphocyte / inputs.monocyte;
+      const par = inputs.platelet / inputs.albumin;
+      return { lmr, par };
+    }
+
+    function encodeVector(inputs, indices) {
+      return [
+        inputs.mpr === 1 ? 1 : 0,
+        inputs.ypn_stage === 1 ? 1 : 0,
+        inputs.ypn_stage === 2 ? 1 : 0,
+        indices.lmr,
+        indices.par
+      ];
+    }
+
+    function dot(a, b) {
+      let total = 0;
+      for (let i = 0; i < a.length; i += 1) {
+        total += a[i] * b[i];
+      }
+      return total;
+    }
+
+    function quadraticForm(vec, matrix) {
+      let total = 0;
+      for (let i = 0; i < vec.length; i += 1) {
+        for (let j = 0; j < vec.length; j += 1) {
+          total += vec[i] * matrix[i][j] * vec[j];
+        }
+      }
+      return total;
+    }
+
+    function getRiskMeta(lp) {
+      if (lp < MODEL.risk_cutoffs.low_mid) {
+        return { label: "Low Risk", className: "risk-low" };
+      }
+      if (lp < MODEL.risk_cutoffs.mid_high) {
+        return { label: "Intermediate Risk", className: "risk-mid" };
+      }
+      return { label: "High Risk", className: "risk-high" };
+    }
+
+    function interpolateBaselineSurvivalAt(timePoint, times, values) {
+      if (times.length === 0) {
+        return 1.0;
+      }
+      if (timePoint <= times[0]) {
+        return values[0];
+      }
+      for (let i = 1; i < times.length; i += 1) {
+        if (timePoint <= times[i]) {
+          const leftTime = times[i - 1];
+          const rightTime = times[i];
+          const leftCumHazard = -Math.log(clamp01(values[i - 1]));
+          const rightCumHazard = -Math.log(clamp01(values[i]));
+          if (rightTime === leftTime) {
+            return Math.exp(-rightCumHazard);
+          }
+          const weight = (timePoint - leftTime) / (rightTime - leftTime);
+          const cumHazard = leftCumHazard + weight * (rightCumHazard - leftCumHazard);
+          return Math.exp(-cumHazard);
+        }
+      }
+      return values[values.length - 1];
+    }
+
+    function predictCurve(inputs) {
+      const beta = MODEL.coefficient_order.map((key) => MODEL.coefficients[key]);
+      const indices = calculateIndices(inputs);
+      const x = encodeVector(inputs, indices);
+      const centeredX = x.map((value, index) => value - MODEL.center_vector[index]);
+      const lp = dot(beta, centeredX);
+      const varLp = Math.max(quadraticForm(centeredX, MODEL.covariance_matrix), 0);
+      const times = MODEL.baseline_times;
+      const base = MODEL.baseline_survival;
+      const seLp = Math.sqrt(varLp);
+      const hr = Math.exp(lp);
+
+      const pointRows = MODEL.time_points.map((timePoint) => ({
+        time: timePoint,
+        survival: (() => {
+          const s0 = clamp01(interpolateBaselineSurvivalAt(timePoint, times, base));
+          return Math.pow(s0, hr);
+        })(),
+        lower: (() => {
+          const s0 = clamp01(interpolateBaselineSurvivalAt(timePoint, times, base));
+          const eta = Math.log(-Math.log(s0)) + lp;
+          return Math.exp(-Math.exp(eta + MODEL.z_975 * seLp));
+        })(),
+        upper: (() => {
+          const s0 = clamp01(interpolateBaselineSurvivalAt(timePoint, times, base));
+          const eta = Math.log(-Math.log(s0)) + lp;
+          return Math.exp(-Math.exp(eta - MODEL.z_975 * seLp));
+        })()
+      }));
+
+      return {
+        inputs,
+        indices,
+        lp,
+        hr,
+        risk: getRiskMeta(lp),
+        pointRows
+      };
+    }
+
+    function buildBandPath(points, xScale, yScale) {
+      const upper = points.map((p) => `${xScale(p.time)},${yScale(p.upper)}`).join(" ");
+      const lower = [...points].reverse().map((p) => `${xScale(p.time)},${yScale(p.lower)}`).join(" ");
+      return `${upper} ${lower}`;
+    }
+
+    function drawPlot(prediction) {
+      const svg = document.getElementById("plot");
+      const width = 980;
+      const height = 520;
+      const margin = { top: 28, right: 26, bottom: 64, left: 76 };
+      const innerWidth = width - margin.left - margin.right;
+      const innerHeight = height - margin.top - margin.bottom;
+      const xScale = (value) => margin.left + (value / 60) * innerWidth;
+      const yScale = (value) => margin.top + (1 - value) * innerHeight;
+      const rows = prediction.pointRows;
+
+      let parts = "";
+      parts += `<rect x="0" y="0" width="${width}" height="${height}" fill="#ffffff"></rect>`;
+
+      for (const tick of [0, 0.25, 0.5, 0.75, 1.0]) {
+        const y = yScale(tick);
+        parts += `<line x1="${margin.left}" y1="${y}" x2="${margin.left + innerWidth}" y2="${y}" stroke="#dbdde4" stroke-width="1"></line>`;
+        parts += `<text x="${margin.left - 16}" y="${y + 5}" text-anchor="end" font-size="14" fill="#444444">${tick.toFixed(1)}</text>`;
+      }
+
+      parts += `<line x1="${margin.left}" y1="${margin.top}" x2="${margin.left}" y2="${margin.top + innerHeight}" stroke="#444444" stroke-width="1.3"></line>`;
+      parts += `<line x1="${margin.left}" y1="${margin.top + innerHeight}" x2="${margin.left + innerWidth}" y2="${margin.top + innerHeight}" stroke="#444444" stroke-width="1.3"></line>`;
+
+      for (const timePoint of MODEL.time_points) {
+        const x = xScale(timePoint);
+        parts += `<line x1="${x}" y1="${margin.top}" x2="${x}" y2="${margin.top + innerHeight}" stroke="#d97a6d" stroke-width="1.4" stroke-dasharray="6 6"></line>`;
+      }
+
+      parts += `<polygon points="${buildBandPath(rows, xScale, yScale)}" fill="rgba(74, 99, 191, 0.16)"></polygon>`;
+
+      const linePath = rows.map((row, index) => `${index === 0 ? "M" : "L"} ${xScale(row.time)} ${yScale(row.survival)}`).join(" ");
+      parts += `<path d="${linePath}" fill="none" stroke="#4a63bf" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"></path>`;
+
+      for (const row of rows) {
+        const x = xScale(row.time);
+        const y = yScale(row.survival);
+        parts += `<circle cx="${x}" cy="${y}" r="9" fill="#4a63bf" stroke="#ffffff" stroke-width="4"></circle>`;
+        parts += `<text x="${x}" y="${y - 18}" text-anchor="middle" font-size="16" font-weight="700" fill="#222222">${formatPercent(row.survival, 1)}</text>`;
+      }
+
+      for (const tick of MODEL.time_points) {
+        const x = xScale(tick);
+        parts += `<text x="${x}" y="${margin.top + innerHeight + 32}" text-anchor="middle" font-size="15" fill="#444444">${tick}</text>`;
+      }
+
+      parts += `<text x="${margin.left + innerWidth / 2}" y="${height - 10}" text-anchor="middle" font-size="18" fill="#222222">Follow up time (months)</text>`;
+      parts += `<text x="24" y="${margin.top + innerHeight / 2}" text-anchor="middle" font-size="16" fill="#222222" transform="rotate(-90 24 ${margin.top + innerHeight / 2})">Survival probability</text>`;
+
+      svg.innerHTML = parts;
+    }
+
+    function updateTable(prediction) {
+      const tbody = document.getElementById("summary-body");
+      tbody.innerHTML = prediction.pointRows.map((row) => `
+        <tr>
+          <td>${row.time} months</td>
+          <td>${formatPercent(row.survival, 1)}</td>
+          <td>${formatPercent(row.lower, 1)}</td>
+          <td>${formatPercent(row.upper, 1)}</td>
+        </tr>
+      `).join("");
+    }
+
+    function updateSummary(prediction) {
+      document.getElementById("lp-value").textContent = formatNumber(prediction.lp, 3);
+      document.getElementById("hr-value").textContent = formatNumber(prediction.hr, 3);
+      document.getElementById("lmr-card").textContent = formatNumber(prediction.indices.lmr, 2);
+      document.getElementById("par-card").textContent = formatNumber(prediction.indices.par, 2);
+      document.getElementById("nstage-card").textContent = ["N0", "N1", "N2"][prediction.inputs.ypn_stage] || "-";
+      document.getElementById("mpr-card").textContent = prediction.inputs.mpr === 1 ? "MPR" : "No MPR";
+      const badge = document.getElementById("risk-badge");
+      badge.textContent = prediction.risk.label;
+      badge.className = `risk-badge ${prediction.risk.className}`;
+    }
+
+    function buildCopySummary(prediction) {
+      const pointText = prediction.pointRows.map((row) =>
+        `${row.time} months: DFS ${formatPercent(row.survival, 1)} (${formatPercent(row.lower, 1)} to ${formatPercent(row.upper, 1)})`
+      ).join("\n");
+      return [
+        "Disease-Free Survival Probability Calculator",
+        `ypN stage: ${["N0", "N1", "N2"][prediction.inputs.ypn_stage] || "-"}`,
+        `MPR: ${prediction.inputs.mpr === 1 ? "MPR" : "No MPR"}`,
+        `Lymphocyte: ${formatNumber(prediction.inputs.lymphocyte, 2)}`,
+        `Monocyte: ${formatNumber(prediction.inputs.monocyte, 2)}`,
+        `Platelet: ${formatNumber(prediction.inputs.platelet, 0)}`,
+        `Albumin: ${formatNumber(prediction.inputs.albumin, 1)}`,
+        `LMR: ${formatNumber(prediction.indices.lmr, 2)}`,
+        `PAR: ${formatNumber(prediction.indices.par, 2)}`,
+        `Linear predictor: ${formatNumber(prediction.lp, 3)}`,
+        `Relative risk: ${formatNumber(prediction.hr, 3)}`,
+        `Risk group: ${prediction.risk.label}`,
+        "",
+        pointText
+      ].join("\n");
+    }
+
+    function predictAndRender() {
+      const inputs = getInputs();
+      if (![inputs.lymphocyte, inputs.monocyte, inputs.platelet, inputs.albumin].every(Number.isFinite)) {
+        return;
+      }
+      if (![inputs.lymphocyte, inputs.monocyte, inputs.platelet, inputs.albumin].every((v) => v > 0)) {
+        return;
+      }
+      const prediction = predictCurve(inputs);
+      window.__latestPrediction = prediction;
+      drawPlot(prediction);
+      updateTable(prediction);
+      updateSummary(prediction);
+    }
+
+    function resetForm() {
+      setDefaults();
+      predictAndRender();
+    }
+
+    async function copySummary() {
+      if (!window.__latestPrediction) {
+        return;
+      }
+      const button = document.getElementById("copy-btn");
+      const original = button.textContent;
+      try {
+        await navigator.clipboard.writeText(buildCopySummary(window.__latestPrediction));
+        button.textContent = "Copied";
+      } catch (error) {
+        button.textContent = "Copy Failed";
+      }
+      window.setTimeout(() => {
+        button.textContent = original;
+      }, 1400);
+    }
+
+    function initPage() {
+      document.getElementById("page-title").textContent = MODEL.title;
+      document.getElementById("page-subtitle").textContent =
+        "For patients with lung cancer after neoadjuvant therapy and surgery. This local prototype is based on the final model LMR + PAR + ypN stage + MPR and provides estimated 1-, 3-, and 5-year DFS probabilities.";
+      document.getElementById("lymphocyte-range").textContent =
+        `Observed training range: ${formatNumber(MODEL.ranges.lymphocyte.min, 2)} to ${formatNumber(MODEL.ranges.lymphocyte.max, 2)}.`;
+      document.getElementById("monocyte-range").textContent =
+        `Observed training range: ${formatNumber(MODEL.ranges.monocyte.min, 2)} to ${formatNumber(MODEL.ranges.monocyte.max, 2)}.`;
+      document.getElementById("platelet-range").textContent =
+        `Observed training range: ${formatNumber(MODEL.ranges.platelet.min, 0)} to ${formatNumber(MODEL.ranges.platelet.max, 0)}.`;
+      document.getElementById("albumin-range").textContent =
+        `Observed training range: ${formatNumber(MODEL.ranges.albumin.min, 1)} to ${formatNumber(MODEL.ranges.albumin.max, 1)}.`;
+      document.getElementById("footer-note").textContent =
+        `Model fitted on ${MODEL.sample_size} patients with ${MODEL.event_count} DFS events. The displayed intervals are approximate pointwise intervals derived from coefficient uncertainty in the fitted Cox model.`;
+
+      setDefaults();
+      document.getElementById("predict-btn").addEventListener("click", predictAndRender);
+      document.getElementById("reset-btn").addEventListener("click", resetForm);
+      document.getElementById("copy-btn").addEventListener("click", copySummary);
+      predictAndRender();
+    }
+
+    initPage();
+  </script>
+</body>
+</html>
