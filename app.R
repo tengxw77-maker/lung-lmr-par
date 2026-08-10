@@ -1,8 +1,7 @@
 library(shiny)
 library(htmltools)
 
-# Wrap the static calculator as a Shiny app so the project can be
-# published from a GitHub repository through Posit deployment.
+# Minimal Shiny wrapper for hosting the validated static DFS calculator.
 ui <- htmlTemplate("dfs_calculator.html")
 
 server <- function(input, output, session) {
